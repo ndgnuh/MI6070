@@ -20,16 +20,20 @@ if file is None:
     st.stop()
 
 file = Image.open(file).convert("RGB")
-st.subheader("File gốc")
-st.image(file)
-with st.spinner("Detecting texts"):
-    boxes, scores = ocr.detect_text(text_detector, file)
-with st.spinner("Transcribing"):
-    texts = ocr.transcribe_text(text_recognizer, file, boxes)
+col1, col2 = st.columns(2)
+with col1:
+    st.subheader("File gốc")
+    st.image(file)
 
-output = ocr.reconstruct(file, texts, boxes, scores)
-st.subheader("File tái dựng")
-st.image(output)
+with col2:
+    with st.spinner("Detecting texts"):
+        boxes, scores = ocr.detect_text(text_detector, file)
+    with st.spinner("Transcribing"):
+        texts = ocr.transcribe_text(text_recognizer, file, boxes)
+
+    output = ocr.reconstruct(file, texts, boxes, scores)
+    st.subheader("File tái dựng")
+    st.image(output)
 
 st.download_button("Tải về", json.dumps(
     {"texts": texts, "boxes": boxes, "scores": scores}))
