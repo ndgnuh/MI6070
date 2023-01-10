@@ -1,6 +1,7 @@
 git+https://github.com/ndgnuh/vietocr
-python-doctr[torch]
-python-doctr
+git+https://github.com/ndgnuh/eyeball
+# python-doctr[torch]
+# python-doctr
 streamlit
 Pillow
 numpy
