@@ -1,4 +1,6 @@
 from vietocr.tool.config import list_configs
+from eyeball import config as eyeball_configs
+from os import path
 from PIL import Image
 import json
 import ocr
@@ -7,13 +9,22 @@ import os
 os.system('clear')
 
 vietocr_model = st.experimental_singleton(ocr.vietocr_model)
-doctr_model = st.experimental_singleton(ocr.doctr_model)
+detection_model = st.experimental_singleton(ocr.detector_model)
 
-config = st.selectbox("Model", list_configs())
+# st.write(eyeball_configs.configs)
+eyeball_config = st.selectbox(
+    "Detection model",
+    eyeball_configs.configs.values(),
+    format_func=path.basename
+)
+vietocr_config = st.selectbox(
+    "Recognition model",
+    list_configs()
+)
 
 with st.spinner():
-    text_recognizer = vietocr_model(config, 'cuda')
-    text_detector = doctr_model()
+    text_recognizer = vietocr_model(vietocr_config, 'cuda')
+    text_detector = detection_model(eyeball_config)
 
 file = st.file_uploader("Thêm ảnh")
 if file is None:
@@ -27,13 +38,17 @@ with col1:
 
 with col2:
     with st.spinner("Detecting texts"):
-        boxes, scores = ocr.detect_text(text_detector, file)
+        results = ocr.detect_text(text_detector, file)
+        boxes = [tuple(map(int, r['box'])) for r in results]
     with st.spinner("Transcribing"):
         texts = ocr.transcribe_text(text_recognizer, file, boxes)
 
-    output = ocr.reconstruct(file, texts, boxes, scores)
+    for (result, text) in zip(results, texts):
+        result['text'] = text
+        result['score'] = float(result['score'])
+
+    output = ocr.reconstruct(file, texts, boxes)
     st.subheader("File tái dựng")
     st.image(output)
 
-st.download_button("Tải về", json.dumps(
-    {"texts": texts, "boxes": boxes, "scores": scores}))
+st.download_button("Tải về", json.dumps(results))
